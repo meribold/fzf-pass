@@ -310,7 +310,12 @@ mainMenu () {
       26) ${basecommand} --bmarks; return;;
     esac
 
-    mapfile -t password_temp < <(PASSWORD_STORE_DIR="${root}" pass show "$selected_password")
+    if [[ $selected_password == otp/* ]]; then
+      mapfile -t password_temp < <(PASSWORD_STORE_DIR="${root}" pass otp "$selected_password")
+    else
+      mapfile -t password_temp < <(PASSWORD_STORE_DIR="${root}" pass show "$selected_password")
+    fi
+
     password=${password_temp[0]}
     if [[ ${password} == "#FILE="* ]]; then
       pass_file="${password#*=}"
