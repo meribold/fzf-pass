@@ -4,7 +4,7 @@
 # (c) 2015 Rasmus Steinke <rasi@xssn.at>
 
 _rofi () {
-	rofi -i -matching fuzzy -sort -sorting-method fzf -theme-str '* { accent-color: @blue; }' "$@"
+   rofi -i -matching fuzzy -sort -sorting-method fzf -theme-str '* { accent-color: @blue; }' "$@"
 }
 
 # We expect to find these fields in pass(1)'s output
@@ -23,143 +23,143 @@ type_user="Alt+2"
 type_pass="Alt+3"
 
 listgpg () {
-	mapfile -d '' pw_list < <(find -L . -name '*.gpg' -print0)
-	pw_list=("${pw_list[@]#./}")
-	printf '%s\n' "${pw_list[@]}" | sort -n
+   mapfile -d '' pw_list < <(find -L . -name '*.gpg' -print0)
+   pw_list=("${pw_list[@]#./}")
+   printf '%s\n' "${pw_list[@]}" | sort -n
 }
 
 # get all password files and output as newline-delimited text
 list_passwords() {
-	cd "${root}" || exit
-	mapfile -t pw_list < <(listgpg)
-	printf '%s\n' "${pw_list[@]%.gpg}" | sort -n
+   cd "${root}" || exit
+   mapfile -t pw_list < <(listgpg)
+   printf '%s\n' "${pw_list[@]%.gpg}" | sort -n
 }
 
 autopass () {
-	x_repeat_enabled=$(xset q | awk '/auto repeat:/ {print $3}')
-	xset r off
+   x_repeat_enabled=$(xset q | awk '/auto repeat:/ {print $3}')
+   xset r off
 
-	for word in ${stuff["$AUTOTYPE_field"]}; do
-		case "$word" in
-			":tab") xdotool key Tab;;
-			":space") xdotool key space;;
-			":delay") sleep "${delay}";;
-			":enter") xdotool key Return;;
-			":otp") printf '%s' "$(generateOTP)" | xdotool type --delay ${xdotool_delay} --clearmodifiers --file -;;
-			"pass") printf '%s' "${password}" | xdotool type --delay ${xdotool_delay} --clearmodifiers --file -;;
-			"path") printf '%s' "${selected_password}" | rev | cut -d'/' -f1 | rev | xdotool type --clearmodifiers --file -;;
-			*) printf '%s' "${stuff[${word}]}" | xdotool type --delay ${xdotool_delay} --clearmodifiers --file -;;
-		esac
-	done
+   for word in ${stuff["$AUTOTYPE_field"]}; do
+      case "$word" in
+         ":tab") xdotool key Tab;;
+         ":space") xdotool key space;;
+         ":delay") sleep "${delay}";;
+         ":enter") xdotool key Return;;
+         ":otp") printf '%s' "$(generateOTP)" | xdotool type --delay ${xdotool_delay} --clearmodifiers --file -;;
+         "pass") printf '%s' "${password}" | xdotool type --delay ${xdotool_delay} --clearmodifiers --file -;;
+         "path") printf '%s' "${selected_password}" | rev | cut -d'/' -f1 | rev | xdotool type --clearmodifiers --file -;;
+         *) printf '%s' "${stuff[${word}]}" | xdotool type --delay ${xdotool_delay} --clearmodifiers --file -;;
+      esac
+   done
 
-	xset r "$x_repeat_enabled"
-	unset x_repeat_enabled
+   xset r "$x_repeat_enabled"
+   unset x_repeat_enabled
 }
 
 typeUser () {
-	x_repeat_enabled=$(xset q | awk '/auto repeat:/ {print $3}')
-	xset r off
+   x_repeat_enabled=$(xset q | awk '/auto repeat:/ {print $3}')
+   xset r off
 
-	printf '%s' "${stuff[${USERNAME_field}]}" | xdotool type --delay ${xdotool_delay} --clearmodifiers --file -
+   printf '%s' "${stuff[${USERNAME_field}]}" | xdotool type --delay ${xdotool_delay} --clearmodifiers --file -
 
-	xset r "$x_repeat_enabled"
-	unset x_repeat_enabled
+   xset r "$x_repeat_enabled"
+   unset x_repeat_enabled
 }
 
 typePass () {
-	x_repeat_enabled=$(xset q | awk '/auto repeat:/ {print $3}')
-	xset r off
+   x_repeat_enabled=$(xset q | awk '/auto repeat:/ {print $3}')
+   xset r off
 
-	printf '%s' "${password}" | xdotool type --delay ${xdotool_delay} --clearmodifiers --file -
+   printf '%s' "${password}" | xdotool type --delay ${xdotool_delay} --clearmodifiers --file -
 
-	xset r "$x_repeat_enabled"
-	unset x_repeat_enabled
+   xset r "$x_repeat_enabled"
+   unset x_repeat_enabled
 }
 
 generateOTP () {
-	# First, we check if there is a non-conventional OTP command in the pass file
-	if PASSWORD_STORE_DIR="${root}" pass "$selected_password" | grep -q "${OTPmethod_field}: "; then
-		# We execute the commands after otp_method: AS-IS
-		bash -c "$(PASSWORD_STORE_DIR="${root}" pass "$selected_password" | grep "${OTPmethod_field}: " | cut -d' ' -f2-)"
-	else
-		# If there is no method defined, fallback to pass-otp
-		PASSWORD_STORE_DIR="${root}" pass otp "$selected_password"
-	fi
+   # First, we check if there is a non-conventional OTP command in the pass file
+   if PASSWORD_STORE_DIR="${root}" pass "$selected_password" | grep -q "${OTPmethod_field}: "; then
+      # We execute the commands after otp_method: AS-IS
+      bash -c "$(PASSWORD_STORE_DIR="${root}" pass "$selected_password" | grep "${OTPmethod_field}: " | cut -d' ' -f2-)"
+   else
+      # If there is no method defined, fallback to pass-otp
+      PASSWORD_STORE_DIR="${root}" pass otp "$selected_password"
+   fi
 }
 
 mainMenu () {
-	unset selected_password
+   unset selected_password
 
-	args=( -dmenu
-		-kb-custom-1 "${autotype}"
-		-kb-custom-2 "${type_user}"
-		-kb-custom-3 "${type_pass}"
-		-p ">"
-	)
+   args=( -dmenu
+      -kb-custom-1 "${autotype}"
+      -kb-custom-2 "${type_user}"
+      -kb-custom-3 "${type_pass}"
+      -p ">"
+   )
 
-	selected_password="$(list_passwords 2>/dev/null | _rofi "${args[@]}")"
+   selected_password="$(list_passwords 2>/dev/null | _rofi "${args[@]}")"
 
-	rofi_exit=$?
-	if [[ $rofi_exit -eq 1 ]]; then
-		exit
-	fi
+   rofi_exit=$?
+   if [[ $rofi_exit -eq 1 ]]; then
+      exit
+   fi
 
-	mapfile -t password_temp < <(PASSWORD_STORE_DIR="${root}" pass show "$selected_password")
-	password=${password_temp[0]}
+   mapfile -t password_temp < <(PASSWORD_STORE_DIR="${root}" pass show "$selected_password")
+   password=${password_temp[0]}
 
-	fields=$(printf '%s\n' "${password_temp[@]:1}" | awk '$1 ~ /:$/ || /otpauth:\/\// {$1=$1;print}')
-	declare -A stuff
-	stuff["pass"]=${password}
+   fields=$(printf '%s\n' "${password_temp[@]:1}" | awk '$1 ~ /:$/ || /otpauth:\/\// {$1=$1;print}')
+   declare -A stuff
+   stuff["pass"]=${password}
 
-	if [[ -n $fields ]]; then
-		while read -r LINE; do
-			unset _id _val
-			case "$LINE" in
-				"otpauth://"*|"${OTPmethod_field}"*)
-					_id="OTP"
-					_val=""
-					;;
-				*)
-					_id="${LINE%%: *}"
-					_val="${LINE#* }"
-					;;
-			esac
+   if [[ -n $fields ]]; then
+      while read -r LINE; do
+         unset _id _val
+         case "$LINE" in
+            "otpauth://"*|"${OTPmethod_field}"*)
+               _id="OTP"
+               _val=""
+               ;;
+            *)
+               _id="${LINE%%: *}"
+               _val="${LINE#* }"
+               ;;
+         esac
 
-			if [[ -n "$_id" ]]; then
-				stuff["${_id}"]=${_val}
-			fi
-		done < <(printf '%s\n' "${fields}")
+         if [[ -n "$_id" ]]; then
+            stuff["${_id}"]=${_val}
+         fi
+      done < <(printf '%s\n' "${fields}")
 
-		if test "${stuff['autotype']+autotype}"; then
-			:
-		else
-			stuff["autotype"]="${USERNAME_field} :tab pass"
-		fi
-	fi
+      if test "${stuff['autotype']+autotype}"; then
+         :
+      else
+         stuff["autotype"]="${USERNAME_field} :tab pass"
+      fi
+   fi
 
-	if [[ -z "${stuff["${AUTOTYPE_field}"]}" ]]; then
-		if [[ -n $default_autotype ]]; then
-			stuff["${AUTOTYPE_field}"]="${default_autotype}"
-		fi
-	fi
-	if [[ -z "${stuff["${USERNAME_field}"]}" ]]; then
-		if [[ -n $default_user ]]; then
-			if [[ "$default_user" == ":filename" ]]; then
-				stuff["${USERNAME_field}"]="$(basename "$selected_password")"
-			else
-				stuff["${USERNAME_field}"]="${default_user}"
-			fi
-		fi
-	fi
+   if [[ -z "${stuff["${AUTOTYPE_field}"]}" ]]; then
+      if [[ -n $default_autotype ]]; then
+         stuff["${AUTOTYPE_field}"]="${default_autotype}"
+      fi
+   fi
+   if [[ -z "${stuff["${USERNAME_field}"]}" ]]; then
+      if [[ -n $default_user ]]; then
+         if [[ "$default_user" == ":filename" ]]; then
+            stuff["${USERNAME_field}"]="$(basename "$selected_password")"
+         else
+            stuff["${USERNAME_field}"]="${default_user}"
+         fi
+      fi
+   fi
 
-	# actions based on keypresses
-	# The exit code for -kb-custom-X is X+9.
-	case "${rofi_exit}" in
-		0) sleep $wait; autopass;;
-		10) sleep $wait; autopass;;
-		11) sleep $wait; typeUser;;
-		12) sleep $wait; typePass;;
-	esac
+   # actions based on keypresses
+   # The exit code for -kb-custom-X is X+9.
+   case "${rofi_exit}" in
+      0) sleep $wait; autopass;;
+      10) sleep $wait; autopass;;
+      11) sleep $wait; typeUser;;
+      12) sleep $wait; typePass;;
+   esac
 }
 
 
