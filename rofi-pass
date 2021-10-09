@@ -36,6 +36,7 @@ list_passwords() {
 }
 
 autopass () {
+   local x_repeat_enabled
    x_repeat_enabled=$(xset q | awk '/auto repeat:/ {print $3}')
    xset r off
 
@@ -53,27 +54,26 @@ autopass () {
    done
 
    xset r "$x_repeat_enabled"
-   unset x_repeat_enabled
 }
 
 typeUser () {
+   local x_repeat_enabled
    x_repeat_enabled=$(xset q | awk '/auto repeat:/ {print $3}')
    xset r off
 
    printf '%s' "${stuff[${USERNAME_field}]}" | xdotool type --delay ${xdotool_delay} --clearmodifiers --file -
 
    xset r "$x_repeat_enabled"
-   unset x_repeat_enabled
 }
 
 typePass () {
+   local x_repeat_enabled
    x_repeat_enabled=$(xset q | awk '/auto repeat:/ {print $3}')
    xset r off
 
    printf '%s' "${password}" | xdotool type --delay ${xdotool_delay} --clearmodifiers --file -
 
    xset r "$x_repeat_enabled"
-   unset x_repeat_enabled
 }
 
 generateOTP () {
