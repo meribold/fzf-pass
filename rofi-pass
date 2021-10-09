@@ -130,6 +130,12 @@ if [[ -z "${stuff["${USERNAME_field}"]}" ]]; then
 fi
 
 x_repeat_enabled=$(xset q | awk '/auto repeat:/ {print $3}')
+
+cleanup() {
+   xset r "$x_repeat_enabled"
+}
+trap cleanup EXIT
+
 xset r off
 
 # actions based on keypresses
@@ -139,5 +145,3 @@ case "${rofi_exit}" in
    11) sleep $wait; typeUser;;
    12) sleep $wait; typePass;;
 esac
-
-xset r "$x_repeat_enabled"
