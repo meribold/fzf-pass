@@ -14,7 +14,7 @@ OTPmethod_field=otp_method
 
 default_autotype='user :tab pass'
 delay=2
-wait=0.2
+wait=0.05
 xdotool_delay=12
 default_user=meribold
 
