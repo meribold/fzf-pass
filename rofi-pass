@@ -22,7 +22,7 @@ type_user='Alt+2'
 type_pass='Alt+3'
 
 listgpg () {
-   mapfile -d '' pw_list < <(find -L . -name '*.gpg' -print0)
+   readarray -d '' pw_list < <(find -L . -name '*.gpg' -print0)
    pw_list=("${pw_list[@]#./}")
    printf '%s\n' "${pw_list[@]}" | sort -n
 }
@@ -30,7 +30,7 @@ listgpg () {
 # get all password files and output as newline-delimited text
 list_passwords() {
    cd ~/.password-store || exit
-   mapfile -t pw_list < <(listgpg)
+   readarray -t pw_list < <(listgpg)
    printf '%s\n' "${pw_list[@]%.gpg}" | sort -n
 }
 
@@ -81,7 +81,7 @@ if [[ $rofi_exit == 1 ]]; then
    exit
 fi
 
-mapfile -t password_temp < <(pass show "$selected_password")
+readarray -t password_temp < <(pass show "$selected_password")
 password=${password_temp[0]}
 
 fields=$(printf '%s\n' "${password_temp[@]:1}" | awk '$1 ~ /:$/ || /otpauth:\/\// {$1=$1;print}')
