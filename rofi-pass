@@ -1,10 +1,13 @@
 #!/usr/bin/env bash
 
-# rofi-pass
+# fzf-pass
 # (c) 2015 Rasmus Steinke <rasi@xssn.at>
 
-_rofi () {
-   rofi -i -matching fuzzy -sort -sorting-method fzf -theme-str '* { accent-color: @blue; }' "$@"
+# --bind
+# --expect
+# consider the preview and toggle-preview actions
+_fzfmenu () {
+   fzfmenu --expect=alt-2,alt-3
 }
 
 # We expect to find these fields in pass(1)'s output
@@ -17,9 +20,6 @@ delay=2
 wait=0.05
 xdotool_delay=12
 default_user=meribold
-
-type_user='Alt+2'
-type_pass='Alt+3'
 
 listgpg () {
    readarray -d '' pw_list < <(find -L . -name '*.gpg' -print0)
@@ -68,11 +68,19 @@ generateOTP () {
    fi
 }
 
-args=(-dmenu -kb-custom-2 "$type_user" -kb-custom-3 "$type_pass" -p '>')
-selected_password=$(list_passwords 2>/dev/null | _rofi "${args[@]}")
+# args=(-dmenu -kb-custom-2 "$type_user" -kb-custom-3 "$type_pass" -p '>')
+# args=()
+# selected_password=$(list_passwords 2>/dev/null | _fzfmenu "${args[@]}") || exit $?
+# notify-send "$selected_password"
 
-rofi_exit=$?
-[[ $rofi_exit == 1 ]] && exit
+readarray -t fzf_output < <(list_passwords 2>/dev/null | _fzfmenu) || exit $?
+
+key=${fzf_output[0]}
+selected_password=${fzf_output[1]}
+
+# notify-send "foo $key $selected_password"
+
+[[ $selected_password ]] || exit $?
 
 readarray -t password_temp < <(pass show "$selected_password")
 password=${password_temp[0]}
@@ -131,10 +139,8 @@ trap cleanup EXIT
 
 xset r off
 
-# actions based on keypresses
-# The exit code for -kb-custom-X is X+9.
-case "$rofi_exit" in
-   0) sleep $wait; autopass;;
-   11) sleep $wait; typeUser;;
-   12) sleep $wait; typePass;;
+case $key in
+   alt-2) sleep $wait; typeUser;;
+   alt-3) sleep $wait; typePass;;
+   *) sleep $wait; autopass;;
 esac
