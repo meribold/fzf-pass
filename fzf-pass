@@ -1,11 +1,7 @@
 #!/usr/bin/env bash
 
-# fzf-pass
-# (c) 2015 Rasmus Steinke <rasi@xssn.at>
+# fzf-pass (based on rofi-pass by Rasmus Steinke)
 
-# --bind
-# --expect
-# consider the preview and toggle-preview actions
 _fzfmenu () {
    fzfmenu --expect=alt-2,alt-3
 }
@@ -37,13 +33,13 @@ list_passwords() {
 autopass () {
    for word in ${stuff["$AUTOTYPE_field"]}; do
       case "$word" in
-         ':tab') xdotool key Tab;;
-         ':space') xdotool key space;;
-         ':delay') sleep "$delay";;
-         ':enter') xdotool key Return;;
-         ':otp') printf '%s' "$(generateOTP)" | xdotool type --delay $xdotool_delay --clearmodifiers --file -;;
-         'pass') printf '%s' "$password" | xdotool type --delay $xdotool_delay --clearmodifiers --file -;;
-         'path') printf '%s' "$selected_password" | rev | cut -d'/' -f1 | rev | xdotool type --clearmodifiers --file -;;
+         :tab) xdotool key Tab;;
+         :space) xdotool key space;;
+         :delay) sleep "$delay";;
+         :enter) xdotool key Return;;
+         :otp) printf '%s' "$(generateOTP)" | xdotool type --delay $xdotool_delay --clearmodifiers --file -;;
+         pass) printf '%s' "$password" | xdotool type --delay $xdotool_delay --clearmodifiers --file -;;
+         path) printf '%s' "$selected_password" | rev | cut -d'/' -f1 | rev | xdotool type --clearmodifiers --file -;;
          *) printf '%s' "${stuff[${word}]}" | xdotool type --delay $xdotool_delay --clearmodifiers --file -;;
       esac
    done
@@ -68,17 +64,12 @@ generateOTP () {
    fi
 }
 
-# args=(-dmenu -kb-custom-2 "$type_user" -kb-custom-3 "$type_pass" -p '>')
-# args=()
-# selected_password=$(list_passwords 2>/dev/null | _fzfmenu "${args[@]}") || exit $?
-# notify-send "$selected_password"
+readarray -t fzf_output < <(list_passwords 2>/dev/null | _fzfmenu)
 
-readarray -t fzf_output < <(list_passwords 2>/dev/null | _fzfmenu) || exit $?
+(( ${#fzf_output[@]} == 2 )) || exit ?
 
 key=${fzf_output[0]}
 selected_password=${fzf_output[1]}
-
-# notify-send "foo $key $selected_password"
 
 [[ $selected_password ]] || exit $?
 
