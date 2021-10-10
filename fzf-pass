@@ -3,10 +3,11 @@
 # fzf-pass (based on rofi-pass by Rasmus Steinke)
 
 _fzfmenu () {
-   fzfmenu --expect=alt-u,alt-p
+   fzfmenu --expect=alt-u,alt-p,alt-o
 }
 
 # We expect to find these fields in pass(1)'s output
+URL_field=url
 USERNAME_field=user
 AUTOTYPE_field=autotype
 OTPmethod_field=otp_method
@@ -43,6 +44,10 @@ autopass () {
          *) printf '%s' "${stuff[${word}]}" | xdotool type --delay $xdotool_delay --clearmodifiers --file -;;
       esac
    done
+}
+
+openURL () {
+	$BROWSER "$(pass "$selected_password" | grep "${URL_field}: " | gawk '{sub(/:/,"")}{print $2}1' | head -1)"
 }
 
 typeUser () {
@@ -133,5 +138,6 @@ xset r off
 case $key in
    alt-u) sleep $wait; typeUser;;
    alt-p) sleep $wait; typePass;;
+   alt-o) openURL;;
    *) sleep $wait; autopass;;
 esac
