@@ -3,7 +3,7 @@
 # fzf-pass (based on rofi-pass by Rasmus Steinke)
 
 _fzfmenu () {
-   fzfmenu --expect=alt-2,alt-3
+   fzfmenu --expect=alt-u,alt-p
 }
 
 # We expect to find these fields in pass(1)'s output
@@ -131,7 +131,7 @@ trap cleanup EXIT
 xset r off
 
 case $key in
-   alt-2) sleep $wait; typeUser;;
-   alt-3) sleep $wait; typePass;;
+   alt-u) sleep $wait; typeUser;;
+   alt-p) sleep $wait; typePass;;
    *) sleep $wait; autopass;;
 esac
