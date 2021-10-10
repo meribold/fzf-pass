@@ -2,7 +2,7 @@
 
 # fzf-pass (based on rofi-pass by Rasmus Steinke)
 
-_fzfmenu () {
+_fzfmenu() {
    fzfmenu --expect=alt-u,alt-p,alt-o
 }
 
@@ -18,7 +18,7 @@ wait=0.05
 xdotool_delay=12
 default_user=meribold
 
-listgpg () {
+listgpg() {
    readarray -d '' pw_list < <(find -L . -name '*.gpg' -print0)
    pw_list=("${pw_list[@]#./}")
    printf '%s\n' "${pw_list[@]}" | sort -n
@@ -31,7 +31,7 @@ list_passwords() {
    printf '%s\n' "${pw_list[@]%.gpg}" | sort -n
 }
 
-autopass () {
+autopass() {
    for word in ${stuff["$AUTOTYPE_field"]}; do
       case "$word" in
          :tab) xdotool key Tab;;
@@ -46,19 +46,19 @@ autopass () {
    done
 }
 
-openURL () {
+openURL() {
 	$BROWSER "$(pass "$selected_password" | grep "${URL_field}: " | gawk '{sub(/:/,"")}{print $2}1' | head -1)"
 }
 
-typeUser () {
+typeUser() {
    printf '%s' "${stuff[${USERNAME_field}]}" | xdotool type --delay $xdotool_delay --clearmodifiers --file -
 }
 
-typePass () {
+typePass() {
    printf '%s' "$password" | xdotool type --delay $xdotool_delay --clearmodifiers --file -
 }
 
-generateOTP () {
+generateOTP() {
    # First, we check if there is a non-conventional OTP command in the pass file
    if pass "$selected_password" | grep -q "$OTPmethod_field: "; then
       # We execute the commands after otp_method: AS-IS
