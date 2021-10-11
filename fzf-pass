@@ -1,11 +1,5 @@
 #!/usr/bin/env bash
 
-# The GNU Privacy Guard Manual and gpg-agent(1) suggest setting and exporting GPG_TTY like
-# this.  It tells gpg-agent the file name of the terminal connected to stdin, which is
-# used by `pinentry-curses`.
-export GPG_TTY=$(tty)
-notify-send $PINENTRY_USER_DATA
-
 listPasswords() {
    find -L ~/.password-store -name '*.gpg' -printf '%P\n' | sed 's/.gpg$//' | sort
 }
