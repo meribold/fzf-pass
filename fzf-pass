@@ -1,39 +1,13 @@
 #!/usr/bin/env bash
 
-list_passwords() {
+# The GNU Privacy Guard Manual and gpg-agent(1) suggest setting and exporting GPG_TTY like
+# this.  It tells gpg-agent the file name of the terminal connected to stdin, which is
+# used by `pinentry-curses`.
+export GPG_TTY=$(tty)
+notify-send $PINENTRY_USER_DATA
+
+listPasswords() {
    find -L ~/.password-store -name '*.gpg' -printf '%P\n' | sed 's/.gpg$//' | sort
-}
-
-autopass() {
-   declare -A stuff
-   readPassFile
-   for word in ${stuff[autotype]}; do
-      case $word in
-         :tab) xdotool key Tab;;
-         :space) xdotool key space;;
-         :delay) sleep 2;;
-         :enter) xdotool key Return;;
-         :otp) xdotool type --clearmodifiers "$(generateOtp)";;
-         pass) xdotool type --clearmodifiers "$password";;
-         *) printf '%s' "${stuff[${word}]}" | xdotool type --clearmodifiers --file -;;
-      esac
-   done
-}
-
-openUrl() {
-	$BROWSER "$(pass show "$selected_password" | grep 'url: ' | gawk '{sub(/:/,"")}{print $2}1' | head -1)"
-}
-
-typeUser() {
-   declare -A stuff
-   readPassFile
-   xdotool type --clearmodifiers "${stuff[user]}"
-}
-
-typePass() {
-   declare -A stuff
-   readPassFile
-   xdotool type --clearmodifiers "$password"
 }
 
 generateOtp() {
@@ -42,7 +16,11 @@ generateOtp() {
    pass otp "$selected_password"
 }
 
-readarray -t fzf_output < <(list_passwords 2>/dev/null | fzf --expect=alt-u,alt-p,alt-a,alt-o,alt-enter)
+readarray -t fzf_output < <(
+   listPasswords 2>/dev/null |
+   fzf --prompt='~/.password-store/' \
+       --color='dark,hl:blue:regular,fg+:white:regular,hl+:blue:regular:reverse,query:white:regular,info:gray:regular,prompt:blue:regular,pointer:blue:bold' \
+       --expect=alt-u,alt-p,alt-a,alt-o,alt-enter)
 
 (( ${#fzf_output[@]} == 2 )) || exit $?
 
@@ -60,7 +38,7 @@ readPassFile() {
    while read -r line; do
       unset _id _val
       case $line in
-         'otpauth://'*)
+         otpauth://*)
             _id=OTP
             _val=
             ;;
@@ -83,16 +61,22 @@ readPassFile() {
    fi
 }
 
-if [[ $key == '' ]]; then
-   output=$(pass show "$selected_password")
-   num_lines=$(wc -l <<< "$output")
-   max_line_length=$(wc -L <<< "$output")
-   i3-msg -q "resize set $((max_line_length > 36 ? 4 + max_line_length * 7 : 256)) $((num_lines > 4 ? 4 + num_lines * 13 : 56)); move position center"
-   tput civis
-   printf '%s' "$output"
-   read -rn1
-   exit
-fi
+case $key in
+   '')
+      output=$(pass show "$selected_password")
+      num_lines=$(wc -l <<< "$output")
+      max_line_length=$(wc -L <<< "$output")
+      i3-msg -q "resize set $((max_line_length > 36 ? 4 + max_line_length * 7 : 256)) $((num_lines > 4 ? 4 + num_lines * 13 : 56)); move position center"
+      tput civis
+      printf '%s' "$output"
+      read -rn1
+      exit
+      ;;
+   alt-o)
+      $BROWSER "$(pass show "$selected_password" | grep 'url: ' | gawk '{sub(/:/,"")}{print $2}1' | head -1)"
+      exit
+      ;;
+esac
 
 x_repeat_enabled=$(xset q | awk '/auto repeat:/ {print $3}')
 
@@ -103,10 +87,31 @@ trap cleanup EXIT
 
 xset r off
 
+declare -A stuff
+readPassFile
+
 trap '' SIGHUP
 case $key in
-   alt-u) sleep 0.05; typeUser;;
-   alt-p) sleep 0.05; typePass;;
-   alt-a) sleep 0.05; autopass;;
-   alt-o) openUrl;;
+   alt-u)
+      sleep 0.05
+      xdotool type --clearmodifiers "${stuff[user]}"
+      ;;
+   alt-p)
+      sleep 0.05
+      xdotool type --clearmodifiers "$password"
+      ;;
+   alt-a)
+      sleep 0.05
+      for word in ${stuff[autotype]}; do
+         case $word in
+            :tab) xdotool key Tab;;
+            :space) xdotool key space;;
+            :delay) sleep 2;;
+            :enter) xdotool key Return;;
+            :otp) xdotool type --clearmodifiers "$(generateOtp)";;
+            pass) xdotool type --clearmodifiers "$password";;
+            *) printf '%s' "${stuff[${word}]}" | xdotool type --clearmodifiers --file -;;
+         esac
+      done
+      ;;
 esac &
