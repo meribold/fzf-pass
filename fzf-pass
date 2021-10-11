@@ -83,16 +83,22 @@ readPassFile() {
    fi
 }
 
-if [[ $key == '' ]]; then
-   output=$(pass show "$selected_password")
-   num_lines=$(wc -l <<< "$output")
-   max_line_length=$(wc -L <<< "$output")
-   i3-msg -q "resize set $((max_line_length > 36 ? 4 + max_line_length * 7 : 256)) $((num_lines > 4 ? 4 + num_lines * 13 : 56)); move position center"
-   tput civis
-   printf '%s' "$output"
-   read -rn1
-   exit
-fi
+case $key in
+   '')
+      output=$(pass show "$selected_password")
+      num_lines=$(wc -l <<< "$output")
+      max_line_length=$(wc -L <<< "$output")
+      i3-msg -q "resize set $((max_line_length > 36 ? 4 + max_line_length * 7 : 256)) $((num_lines > 4 ? 4 + num_lines * 13 : 56)); move position center"
+      tput civis
+      printf '%s' "$output"
+      read -rn1
+      exit
+      ;;
+   alt-o)
+      openUrl
+      exit
+      ;;
+esac
 
 x_repeat_enabled=$(xset q | awk '/auto repeat:/ {print $3}')
 
@@ -108,5 +114,4 @@ case $key in
    alt-u) sleep 0.05; typeUser;;
    alt-p) sleep 0.05; typePass;;
    alt-a) sleep 0.05; autopass;;
-   alt-o) openUrl;;
 esac &
