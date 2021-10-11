@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-list_passwords() {
+listPasswords() {
    find -L ~/.password-store -name '*.gpg' -printf '%P\n' | sed 's/.gpg$//' | sort
 }
 
@@ -10,7 +10,7 @@ generateOtp() {
    pass otp "$selected_password"
 }
 
-readarray -t fzf_output < <(list_passwords 2>/dev/null | fzf --expect=alt-u,alt-p,alt-a,alt-o,alt-enter)
+readarray -t fzf_output < <(listPasswords 2>/dev/null | fzf --expect=alt-u,alt-p,alt-a,alt-o,alt-enter)
 
 (( ${#fzf_output[@]} == 2 )) || exit $?
 
