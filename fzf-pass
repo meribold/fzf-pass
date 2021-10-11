@@ -1,61 +1,39 @@
 #!/usr/bin/env bash
 
-# fzf-pass (based on rofi-pass by Rasmus Steinke)
-
-# We expect to find these fields in pass(1)'s output
-URL_field=url
-USERNAME_field=user
-AUTOTYPE_field=autotype
-
-default_autotype='user :tab pass'
-delay=2
-wait=0.05
-default_user=meribold
-
-listgpg() {
-   readarray -d '' pw_list < <(find -L . -name '*.gpg' -print0)
-   pw_list=("${pw_list[@]#./}")
-   printf '%s\n' "${pw_list[@]}" | sort -n
-}
-
-# get all password files and output as newline-delimited text
 list_passwords() {
-   cd ~/.password-store || exit
-   readarray -t pw_list < <(listgpg)
-   printf '%s\n' "${pw_list[@]%.gpg}" | sort -n
+   find -L ~/.password-store -name '*.gpg' -printf '%P\n' | sed 's/.gpg$//' | sort
 }
 
 autopass() {
    declare -A stuff
    readPassFile
-   for word in ${stuff["$AUTOTYPE_field"]}; do
-      case "$word" in
+   for word in ${stuff[autotype]}; do
+      case $word in
          :tab) xdotool key Tab;;
          :space) xdotool key space;;
-         :delay) sleep "$delay";;
+         :delay) sleep 2;;
          :enter) xdotool key Return;;
          :otp) xdotool type --clearmodifiers "$(generateOtp)";;
          pass) xdotool type --clearmodifiers "$password";;
-         path) printf '%s' "$selected_password" | rev | cut -d'/' -f1 | rev | xdotool type --clearmodifiers --file -;;
          *) printf '%s' "${stuff[${word}]}" | xdotool type --clearmodifiers --file -;;
       esac
    done
 }
 
 openUrl() {
-	$BROWSER "$(pass show "$selected_password" | grep "${URL_field}: " | gawk '{sub(/:/,"")}{print $2}1' | head -1)"
+	$BROWSER "$(pass show "$selected_password" | grep 'url: ' | gawk '{sub(/:/,"")}{print $2}1' | head -1)"
 }
 
 typeUser() {
    declare -A stuff
    readPassFile
-   printf '%s' "${stuff[${USERNAME_field}]}" | xdotool type --clearmodifiers --file -
+   xdotool type --clearmodifiers "${stuff[user]}"
 }
 
 typePass() {
    declare -A stuff
    readPassFile
-   printf '%s' "$password" | xdotool type --clearmodifiers --file -
+   xdotool type --clearmodifiers "$password"
 }
 
 generateOtp() {
@@ -74,51 +52,34 @@ selected_password=${fzf_output[1]}
 [[ $selected_password ]] || exit $?
 
 readPassFile() {
-   readarray -t password_temp < <(pass show "$selected_password")
-   password=${password_temp[0]}
+   readarray -t lines < <(pass show "$selected_password")
+   password=${lines[0]}
 
-   fields=$(printf '%s\n' "${password_temp[@]:1}" | awk '$1 ~ /:$/ || /otpauth:\/\// {$1=$1;print}')
    stuff[pass]=$password
 
-   if [[ -n $fields ]]; then
-      while read -r line; do
-         unset _id _val
-         case "$line" in
-            'otpauth://'*)
-               _id=OTP
-               _val=
-               ;;
-            *)
-               _id=${line%%: *}
-               _val=${line#* }
-               ;;
-         esac
+   while read -r line; do
+      unset _id _val
+      case $line in
+         'otpauth://'*)
+            _id=OTP
+            _val=
+            ;;
+         *)
+            _id=${line%%: *}
+            _val=${line#* }
+            ;;
+      esac
 
-         if [[ -n $_id ]]; then
-            stuff[${_id}]=$_val
-         fi
-      done < <(printf '%s\n' "$fields")
-
-      if [[ ${stuff[autotype]+autotype} ]]; then
-         :
-      else
-         stuff[autotype]="$USERNAME_field :tab pass"
+      if [[ -n $_id ]]; then
+         stuff[${_id}]=$_val
       fi
+   done < <(printf '%s\n' "${lines[@]:1}" | awk '$1 ~ /:$/ || /otpauth:\/\// {$1=$1;print}')
+
+   if [[ -z ${stuff[autotype]} ]]; then
+      stuff[autotype]='user :tab pass'
    fi
-
-   if [[ -z ${stuff["${AUTOTYPE_field}"]} ]]; then
-      if [[ -n $default_autotype ]]; then
-         stuff[${AUTOTYPE_field}]=$default_autotype
-      fi
-   fi
-   if [[ -z ${stuff["${USERNAME_field}"]} ]]; then
-      if [[ -n $default_user ]]; then
-         if [[ $default_user == :filename ]]; then
-            stuff[$USERNAME_field]=$(basename "$selected_password")
-         else
-            stuff[$USERNAME_field]=$default_user
-         fi
-      fi
+   if [[ -z ${stuff[user]} ]]; then
+      stuff[user]=meribold
    fi
 }
 
@@ -144,8 +105,8 @@ xset r off
 
 trap '' SIGHUP
 case $key in
-   alt-u) sleep $wait; typeUser;;
-   alt-p) sleep $wait; typePass;;
-   alt-a) sleep $wait; autopass;;
+   alt-u) sleep 0.05; typeUser;;
+   alt-p) sleep 0.05; typePass;;
+   alt-a) sleep 0.05; autopass;;
    alt-o) openUrl;;
 esac &
