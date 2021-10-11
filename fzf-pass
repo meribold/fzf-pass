@@ -46,8 +46,8 @@ autopass() {
    done
 }
 
-openURL() {
-	$BROWSER "$(pass "$selected_password" | grep "${URL_field}: " | gawk '{sub(/:/,"")}{print $2}1' | head -1)"
+openUrl() {
+	$BROWSER "$(pass show "$selected_password" | grep "${URL_field}: " | gawk '{sub(/:/,"")}{print $2}1' | head -1)"
 }
 
 typeUser() {
@@ -138,6 +138,6 @@ xset r off
 case $key in
    alt-u) sleep $wait; typeUser;;
    alt-p) sleep $wait; typePass;;
-   alt-o) openURL;;
+   alt-o) openUrl;;
    *) sleep $wait; autopass;;
 esac
