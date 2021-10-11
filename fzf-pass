@@ -135,11 +135,6 @@ if [[ $key == '' ]]; then
    num_lines=$(wc -l <<< "$output")
    i3-msg -q "resize set 560 $((num_lines > 4 ? num_lines * 14 : 56)); move position center"
    tput civis
-   # printf '$ pass show %s\n' "$selected_password"
-   # printf '# %s\n\n' "$selected_password"
-   # printf "> %s\n\n" "$selected_password"
-   # printf "> $(tput setaf 4)%s$(tput sgr0)\n" "$selected_password"
-   # pass show "$selected_password"
    printf '%s' "$output"
    read -rn1
    exit
