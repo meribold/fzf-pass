@@ -2,11 +2,14 @@
 
 # fzf-pass (based on rofi-pass by Rasmus Steinke)
 
-_fzfmenu () {
-   fzfmenu --expect=alt-2,alt-3
+_fzfmenu() {
+   # fzfmenu --expect=alt-u,alt-p,alt-o
+   # fzfmenu --expect=alt-u,alt-p,alt-o --bind 'alt-enter:execute(less {})'
+   fzfmenu --expect=alt-u,alt-p,alt-o --bind=\'alt-enter:execute\(less\ {}\)\'
 }
 
 # We expect to find these fields in pass(1)'s output
+URL_field=url
 USERNAME_field=user
 AUTOTYPE_field=autotype
 OTPmethod_field=otp_method
@@ -17,7 +20,7 @@ wait=0.05
 xdotool_delay=12
 default_user=meribold
 
-listgpg () {
+listgpg() {
    readarray -d '' pw_list < <(find -L . -name '*.gpg' -print0)
    pw_list=("${pw_list[@]#./}")
    printf '%s\n' "${pw_list[@]}" | sort -n
@@ -30,7 +33,7 @@ list_passwords() {
    printf '%s\n' "${pw_list[@]%.gpg}" | sort -n
 }
 
-autopass () {
+autopass() {
    for word in ${stuff["$AUTOTYPE_field"]}; do
       case "$word" in
          :tab) xdotool key Tab;;
@@ -45,15 +48,23 @@ autopass () {
    done
 }
 
-typeUser () {
+openURL() {
+	$BROWSER "$(pass "$selected_password" | grep "${URL_field}: " | gawk '{sub(/:/,"")}{print $2}1' | head -1)"
+}
+
+typeUser() {
    printf '%s' "${stuff[${USERNAME_field}]}" | xdotool type --delay $xdotool_delay --clearmodifiers --file -
 }
 
-typePass () {
+typePass() {
    printf '%s' "$password" | xdotool type --delay $xdotool_delay --clearmodifiers --file -
 }
 
-generateOTP () {
+showFile() {
+   :
+}
+
+generateOTP() {
    # First, we check if there is a non-conventional OTP command in the pass file
    if pass "$selected_password" | grep -q "$OTPmethod_field: "; then
       # We execute the commands after otp_method: AS-IS
@@ -66,7 +77,7 @@ generateOTP () {
 
 readarray -t fzf_output < <(list_passwords 2>/dev/null | _fzfmenu)
 
-(( ${#fzf_output[@]} == 2 )) || exit ?
+(( ${#fzf_output[@]} == 2 )) || exit $?
 
 key=${fzf_output[0]}
 selected_password=${fzf_output[1]}
@@ -131,7 +142,8 @@ trap cleanup EXIT
 xset r off
 
 case $key in
-   alt-2) sleep $wait; typeUser;;
-   alt-3) sleep $wait; typePass;;
+   alt-u) sleep $wait; typeUser;;
+   alt-p) sleep $wait; typePass;;
+   alt-o) openURL;;
    *) sleep $wait; autopass;;
 esac
