@@ -3,9 +3,10 @@
 # fzf-pass (based on rofi-pass by Rasmus Steinke)
 
 _fzfmenu() {
-   # fzfmenu --expect=alt-u,alt-p,alt-o
-   # fzfmenu --expect=alt-u,alt-p,alt-o --bind 'alt-enter:execute(less {})'
-   fzfmenu --expect=alt-u,alt-p,alt-o --bind=\'alt-enter:execute\(less\ {}\)\'
+   # fzf --expect=alt-u,alt-p,alt-o
+   fzf --expect=alt-u,alt-p,alt-o,alt-enter
+   # fzf --expect=alt-u,alt-p,alt-o --bind 'alt-enter:execute(pass show {})'
+   # fzfmenu --expect=alt-u,alt-p,alt-o --bind=\'alt-enter:execute\(less\ {}\)\'
 }
 
 # We expect to find these fields in pass(1)'s output
@@ -49,7 +50,7 @@ autopass() {
 }
 
 openURL() {
-	$BROWSER "$(pass "$selected_password" | grep "${URL_field}: " | gawk '{sub(/:/,"")}{print $2}1' | head -1)"
+	$BROWSER "$(pass show "$selected_password" | grep "${URL_field}: " | gawk '{sub(/:/,"")}{print $2}1' | head -1)"
 }
 
 typeUser() {
@@ -61,7 +62,8 @@ typePass() {
 }
 
 showFile() {
-   :
+   pass show "$selected_password"
+   read -rn1
 }
 
 generateOTP() {
@@ -145,5 +147,6 @@ case $key in
    alt-u) sleep $wait; typeUser;;
    alt-p) sleep $wait; typePass;;
    alt-o) openURL;;
-   *) sleep $wait; autopass;;
+   alt-enter) showFile;;
+   *) trap '' SIGHUP; { sleep $wait; autopass; } &;;
 esac
