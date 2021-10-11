@@ -10,7 +10,11 @@ generateOtp() {
    pass otp "$selected_password"
 }
 
-readarray -t fzf_output < <(listPasswords 2>/dev/null | fzf --expect=alt-u,alt-p,alt-a,alt-o,alt-enter)
+readarray -t fzf_output < <(
+   listPasswords 2>/dev/null |
+   fzf --prompt='~/.password-store/' \
+       --color='dark,hl:blue:regular,fg+:white:regular,hl+:blue:regular:reverse,query:white:regular,info:gray:regular,prompt:blue:regular,pointer:blue:bold' \
+       --expect=alt-u,alt-p,alt-a,alt-o,alt-enter)
 
 (( ${#fzf_output[@]} == 2 )) || exit $?
 
