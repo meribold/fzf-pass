@@ -4,38 +4,6 @@ list_passwords() {
    find -L ~/.password-store -name '*.gpg' -printf '%P\n' | sed 's/.gpg$//' | sort
 }
 
-autopass() {
-   declare -A stuff
-   readPassFile
-   for word in ${stuff[autotype]}; do
-      case $word in
-         :tab) xdotool key Tab;;
-         :space) xdotool key space;;
-         :delay) sleep 2;;
-         :enter) xdotool key Return;;
-         :otp) xdotool type --clearmodifiers "$(generateOtp)";;
-         pass) xdotool type --clearmodifiers "$password";;
-         *) printf '%s' "${stuff[${word}]}" | xdotool type --clearmodifiers --file -;;
-      esac
-   done
-}
-
-openUrl() {
-	$BROWSER "$(pass show "$selected_password" | grep 'url: ' | gawk '{sub(/:/,"")}{print $2}1' | head -1)"
-}
-
-typeUser() {
-   declare -A stuff
-   readPassFile
-   xdotool type --clearmodifiers "${stuff[user]}"
-}
-
-typePass() {
-   declare -A stuff
-   readPassFile
-   xdotool type --clearmodifiers "$password"
-}
-
 generateOtp() {
    declare -A stuff
    readPassFile
@@ -95,7 +63,7 @@ case $key in
       exit
       ;;
    alt-o)
-      openUrl
+      $BROWSER "$(pass show "$selected_password" | grep 'url: ' | gawk '{sub(/:/,"")}{print $2}1' | head -1)"
       exit
       ;;
 esac
@@ -109,9 +77,31 @@ trap cleanup EXIT
 
 xset r off
 
+declare -A stuff
+readPassFile
+
 trap '' SIGHUP
 case $key in
-   alt-u) sleep 0.05; typeUser;;
-   alt-p) sleep 0.05; typePass;;
-   alt-a) sleep 0.05; autopass;;
+   alt-u)
+      sleep 0.05
+      xdotool type --clearmodifiers "${stuff[user]}"
+      ;;
+   alt-p)
+      sleep 0.05
+      xdotool type --clearmodifiers "$password"
+      ;;
+   alt-a)
+      sleep 0.05
+      for word in ${stuff[autotype]}; do
+         case $word in
+            :tab) xdotool key Tab;;
+            :space) xdotool key space;;
+            :delay) sleep 2;;
+            :enter) xdotool key Return;;
+            :otp) xdotool type --clearmodifiers "$(generateOtp)";;
+            pass) xdotool type --clearmodifiers "$password";;
+            *) printf '%s' "${stuff[${word}]}" | xdotool type --clearmodifiers --file -;;
+         esac
+      done
+      ;;
 esac &
