@@ -2,13 +2,6 @@
 
 # fzf-pass (based on rofi-pass by Rasmus Steinke)
 
-_fzfmenu() {
-   # fzf --expect=alt-u,alt-p,alt-o
-   fzf --expect=alt-u,alt-p,alt-o,alt-enter
-   # fzf --expect=alt-u,alt-p,alt-o --bind 'alt-enter:execute(pass show {})'
-   # fzfmenu --expect=alt-u,alt-p,alt-o --bind=\'alt-enter:execute\(less\ {}\)\'
-}
-
 # We expect to find these fields in pass(1)'s output
 URL_field=url
 USERNAME_field=user
@@ -35,6 +28,7 @@ list_passwords() {
 }
 
 autopass() {
+   readPassFile
    for word in ${stuff["$AUTOTYPE_field"]}; do
       case "$word" in
          :tab) xdotool key Tab;;
@@ -49,35 +43,34 @@ autopass() {
    done
 }
 
-openURL() {
+openUrl() {
 	$BROWSER "$(pass show "$selected_password" | grep "${URL_field}: " | gawk '{sub(/:/,"")}{print $2}1' | head -1)"
 }
 
 typeUser() {
+   readPassFile
    printf '%s' "${stuff[${USERNAME_field}]}" | xdotool type --delay $xdotool_delay --clearmodifiers --file -
 }
 
 typePass() {
+   readPassFile
    printf '%s' "$password" | xdotool type --delay $xdotool_delay --clearmodifiers --file -
 }
 
-showFile() {
-   pass show "$selected_password"
-   read -rn1
-}
-
+# FIXME: don't decrypt again...
 generateOTP() {
+   readPassFile
    # First, we check if there is a non-conventional OTP command in the pass file
-   if pass "$selected_password" | grep -q "$OTPmethod_field: "; then
+   if pass show "$selected_password" | grep -q "$OTPmethod_field: "; then
       # We execute the commands after otp_method: AS-IS
-      bash -c "$(pass "$selected_password" | grep "$OTPmethod_field: " | cut -d' ' -f2-)"
+      bash -c "$(pass show "$selected_password" | grep "$OTPmethod_field: " | cut -d' ' -f2-)"
    else
       # If there is no method defined, fallback to pass-otp
       pass otp "$selected_password"
    fi
 }
 
-readarray -t fzf_output < <(list_passwords 2>/dev/null | _fzfmenu)
+readarray -t fzf_output < <(list_passwords 2>/dev/null | fzf --expect=alt-u,alt-p,alt-a,alt-o,alt-enter)
 
 (( ${#fzf_output[@]} == 2 )) || exit $?
 
@@ -86,52 +79,70 @@ selected_password=${fzf_output[1]}
 
 [[ $selected_password ]] || exit $?
 
-readarray -t password_temp < <(pass show "$selected_password")
-password=${password_temp[0]}
+readPassFile() {
+   readarray -t password_temp < <(pass show "$selected_password")
+   password=${password_temp[0]}
 
-fields=$(printf '%s\n' "${password_temp[@]:1}" | awk '$1 ~ /:$/ || /otpauth:\/\// {$1=$1;print}')
-declare -A stuff
-stuff[pass]=$password
+   fields=$(printf '%s\n' "${password_temp[@]:1}" | awk '$1 ~ /:$/ || /otpauth:\/\// {$1=$1;print}')
+   declare -A stuff
+   stuff[pass]=$password
 
-if [[ -n $fields ]]; then
-   while read -r line; do
-      unset _id _val
-      case "$line" in
-         'otpauth://'*|"$OTPmethod_field"*)
-            _id=OTP
-            _val=
-            ;;
-         *)
-            _id=${line%%: *}
-            _val=${line#* }
-            ;;
-      esac
+   if [[ -n $fields ]]; then
+      while read -r line; do
+         unset _id _val
+         case "$line" in
+            'otpauth://'*|"$OTPmethod_field"*)
+               _id=OTP
+               _val=
+               ;;
+            *)
+               _id=${line%%: *}
+               _val=${line#* }
+               ;;
+         esac
 
-      if [[ -n $_id ]]; then
-         stuff[${_id}]=$_val
-      fi
-   done < <(printf '%s\n' "$fields")
+         if [[ -n $_id ]]; then
+            stuff[${_id}]=$_val
+         fi
+      done < <(printf '%s\n' "$fields")
 
-   if [[ ${stuff[autotype]+autotype} ]]; then
-      :
-   else
-      stuff[autotype]="$USERNAME_field :tab pass"
-   fi
-fi
-
-if [[ -z ${stuff["${AUTOTYPE_field}"]} ]]; then
-   if [[ -n $default_autotype ]]; then
-      stuff[${AUTOTYPE_field}]=$default_autotype
-   fi
-fi
-if [[ -z ${stuff["${USERNAME_field}"]} ]]; then
-   if [[ -n $default_user ]]; then
-      if [[ $default_user == :filename ]]; then
-         stuff[$USERNAME_field]=$(basename "$selected_password")
+      if [[ ${stuff[autotype]+autotype} ]]; then
+         :
       else
-         stuff[$USERNAME_field]=$default_user
+         stuff[autotype]="$USERNAME_field :tab pass"
       fi
    fi
+
+   if [[ -z ${stuff["${AUTOTYPE_field}"]} ]]; then
+      if [[ -n $default_autotype ]]; then
+         stuff[${AUTOTYPE_field}]=$default_autotype
+      fi
+   fi
+   if [[ -z ${stuff["${USERNAME_field}"]} ]]; then
+      if [[ -n $default_user ]]; then
+         if [[ $default_user == :filename ]]; then
+            stuff[$USERNAME_field]=$(basename "$selected_password")
+         else
+            stuff[$USERNAME_field]=$default_user
+         fi
+      fi
+   fi
+}
+
+# if [[ $key == alt-enter ]]; then
+if [[ $key == '' ]]; then
+   output=$(pass show "$selected_password")
+   num_lines=$(wc -l <<< "$output")
+   i3-msg -q "resize set 560 $((num_lines > 4 ? num_lines * 14 : 56)); move position center"
+   tput civis
+   # printf '$ pass show %s\n' "$selected_password"
+   # printf '# %s\n\n' "$selected_password"
+   # printf "> %s\n\n" "$selected_password"
+   # printf "> $(tput setaf 4)%s$(tput sgr0)\n" "$selected_password"
+   # pass show "$selected_password"
+   printf '%s' "$output"
+   read -rn1
+   exit
 fi
 
 x_repeat_enabled=$(xset q | awk '/auto repeat:/ {print $3}')
@@ -143,10 +154,11 @@ trap cleanup EXIT
 
 xset r off
 
+trap '' SIGHUP
 case $key in
    alt-u) sleep $wait; typeUser;;
    alt-p) sleep $wait; typePass;;
-   alt-o) openURL;;
-   alt-enter) showFile;;
-   *) trap '' SIGHUP; { sleep $wait; autopass; } &;;
-esac
+   alt-a) sleep $wait; autopass;;
+   alt-o) openUrl;;
+   *) sleep $wait; autopass;;
+esac &
