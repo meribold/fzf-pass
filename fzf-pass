@@ -92,7 +92,7 @@ case $key in
       ;;
    alt-p)
       sleep 0.05
-      xdotool type --clearmodifiers "$password"
+      xdotool type --clearmodifiers -- "$password"
       ;;
    alt-a)
       sleep 0.05
@@ -103,7 +103,7 @@ case $key in
             :delay) sleep 2;;
             :enter) xdotool key Return;;
             :otp) xdotool type --clearmodifiers "$(generateOtp)";;
-            pass) xdotool type --clearmodifiers "$password";;
+            pass) xdotool type --clearmodifiers -- "$password";;
             *) printf '%s' "${stuff[${word}]}" | xdotool type --clearmodifiers --file -;;
          esac
       done
