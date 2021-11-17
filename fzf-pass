@@ -14,7 +14,7 @@ readarray -t fzf_output < <(
    listPasswords 2>/dev/null |
    fzf --prompt='~/.password-store/' \
        --color='dark,hl:blue:regular,fg+:white:regular,hl+:blue:regular:reverse,query:white:regular,info:gray:regular,prompt:blue:regular,pointer:blue:bold' \
-       --expect=alt-u,alt-p,alt-a,alt-o,alt-enter)
+       --expect='alt-u,alt-p,alt-a,\,alt-o,alt-enter')
 
 (( ${#fzf_output[@]} == 2 )) || exit $?
 
@@ -94,7 +94,7 @@ case $key in
       sleep 0.05
       xdotool type --clearmodifiers -- "$password"
       ;;
-   alt-a)
+   alt-a|\\)
       sleep 0.05
       for word in ${stuff[autotype]}; do
          case $word in
