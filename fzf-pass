@@ -1,5 +1,8 @@
 #!/usr/bin/env bash
 
+# export GPG_TTY=$(tty)
+# export GPG_TTY=/dev/pts/9
+
 listPasswords() {
    find -L ~/.password-store -name '*.gpg' -printf '%P\n' | sed 's/.gpg$//' | sort
 }
@@ -14,7 +17,7 @@ readarray -t fzf_output < <(
    listPasswords 2>/dev/null |
    fzf --prompt='~/.password-store/' \
        --color='dark,hl:blue:regular,fg+:white:regular,hl+:blue:regular:reverse,query:white:regular,info:gray:regular,prompt:blue:regular,pointer:blue:bold' \
-       --expect=alt-u,alt-p,alt-a,alt-o,alt-enter)
+       --expect='alt-u,alt-p,alt-a,\,alt-o')
 
 (( ${#fzf_output[@]} == 2 )) || exit $?
 
@@ -60,7 +63,7 @@ case $key in
       output=$(pass show "$selected_password")
       num_lines=$(wc -l <<< "$output")
       max_line_length=$(wc -L <<< "$output")
-      i3-msg -q "resize set $((max_line_length > 36 ? 4 + max_line_length * 7 : 256)) $((num_lines > 4 ? 4 + num_lines * 13 : 56)); move position center"
+      i3-msg -q "resize set $((max_line_length > 36 ? 4 + max_line_length * 13 : 472)) $((num_lines > 4 ? 4 + num_lines * 27 : 112)); move position center"
       tput civis
       printf '%s' "$output"
       read -rn1
@@ -92,9 +95,9 @@ case $key in
       ;;
    alt-p)
       sleep 0.05
-      xdotool type --clearmodifiers "$password"
+      xdotool type --clearmodifiers -- "$password"
       ;;
-   alt-a)
+   alt-a|\\)
       sleep 0.05
       for word in ${stuff[autotype]}; do
          case $word in
@@ -103,7 +106,7 @@ case $key in
             :delay) sleep 2;;
             :enter) xdotool key Return;;
             :otp) xdotool type --clearmodifiers "$(generateOtp)";;
-            pass) xdotool type --clearmodifiers "$password";;
+            pass) xdotool type --clearmodifiers -- "$password";;
             *) printf '%s' "${stuff[${word}]}" | xdotool type --clearmodifiers --file -;;
          esac
       done
