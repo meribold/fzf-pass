@@ -60,7 +60,7 @@ case $key in
       output=$(pass show "$selected_password")
       num_lines=$(wc -l <<< "$output")
       max_line_length=$(wc -L <<< "$output")
-      i3-msg -q "resize set $((max_line_length > 36 ? 4 + max_line_length * 13 : 472)) $((num_lines > 4 ? 4 + num_lines * 27 : 112)); move position center"
+      i3-msg -q "resize set $((max_line_length > 36 ? max_line_length * 13 : 468)) $((num_lines > 4 ? num_lines * 27 : 108)); move position center"
       tput civis
       printf '%s' "$output"
       read -rn1
