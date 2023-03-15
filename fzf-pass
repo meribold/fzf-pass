@@ -14,7 +14,7 @@ readarray -t fzf_output < <(
    listPasswords 2>/dev/null |
    fzf --prompt='~/.password-store/' \
        --color='dark,hl:blue:regular,fg+:white:regular,hl+:blue:regular:reverse,query:white:regular,info:gray:regular,prompt:blue:regular,pointer:blue:bold' \
-       --expect='alt-u,alt-p,alt-a,\,alt-o')
+       --expect='tab,[,],\')
 
 (( ${#fzf_output[@]} == 2 )) || exit $?
 
@@ -66,7 +66,7 @@ case $key in
       read -rn1
       exit
       ;;
-   alt-o)
+   tab)
       $BROWSER "$(pass show "$selected_password" | grep 'url: ' | gawk '{sub(/:/,"")}{print $2}1' | head -1)"
       exit
       ;;
@@ -86,15 +86,15 @@ readPassFile
 
 trap '' SIGHUP
 case $key in
-   alt-u)
+   \[)
       sleep 0.05
       xdotool type --clearmodifiers "${stuff[login]}"
       ;;
-   alt-p)
+   \])
       sleep 0.05
       xdotool type --clearmodifiers -- "$password"
       ;;
-   alt-a|\\)
+   \\)
       sleep 0.05
       for word in ${stuff[autotype]}; do
          case $word in
