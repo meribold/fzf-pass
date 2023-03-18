@@ -1,5 +1,11 @@
 #!/usr/bin/env bash
 
+# unset PINENTRY_USER_DATA
+# export GPG_TTY=$(tty)
+# export GPG_TTY=/dev/pts/6
+
+# export PINENTRY_USER_DATA=spawn-xterm
+
 listPasswords() {
    find -L ~/.password-store -name '*.gpg' -printf '%P\n' | sed 's/.gpg$//' | sort
 }
