@@ -1,8 +1,5 @@
 #!/usr/bin/env bash
 
-# export GPG_TTY=$(tty)
-# export GPG_TTY=/dev/pts/9
-
 listPasswords() {
    find -L ~/.password-store -name '*.gpg' -printf '%P\n' | sed 's/.gpg$//' | sort
 }
@@ -17,7 +14,7 @@ readarray -t fzf_output < <(
    listPasswords 2>/dev/null |
    fzf --prompt='~/.password-store/' \
        --color='dark,hl:blue:regular,fg+:white:regular,hl+:blue:regular:reverse,query:white:regular,info:gray:regular,prompt:blue:regular,pointer:blue:bold' \
-       --expect='alt-u,alt-p,alt-a,\,alt-o')
+       --expect='tab,[,],\')
 
 (( ${#fzf_output[@]} == 2 )) || exit $?
 
@@ -51,10 +48,10 @@ readPassFile() {
    done < <(printf '%s\n' "${lines[@]:1}" | awk '$1 ~ /:$/ || /otpauth:\/\// {$1=$1;print}')
 
    if [[ -z ${stuff[autotype]} ]]; then
-      stuff[autotype]='user :tab pass'
+      stuff[autotype]='login :tab pass'
    fi
-   if [[ -z ${stuff[user]} ]]; then
-      stuff[user]=meribold
+   if [[ -z ${stuff[login]} ]]; then
+      stuff[login]=meribold
    fi
 }
 
@@ -63,13 +60,13 @@ case $key in
       output=$(pass show "$selected_password")
       num_lines=$(wc -l <<< "$output")
       max_line_length=$(wc -L <<< "$output")
-      i3-msg -q "resize set $((max_line_length > 36 ? 4 + max_line_length * 13 : 472)) $((num_lines > 4 ? 4 + num_lines * 27 : 112)); move position center"
+      i3-msg -q "resize set $((max_line_length > 36 ? max_line_length * 13 : 468)) $((num_lines > 4 ? num_lines * 27 : 108)); move position center"
       tput civis
       printf '%s' "$output"
       read -rn1
       exit
       ;;
-   alt-o)
+   tab)
       $BROWSER "$(pass show "$selected_password" | grep 'url: ' | gawk '{sub(/:/,"")}{print $2}1' | head -1)"
       exit
       ;;
@@ -89,15 +86,15 @@ readPassFile
 
 trap '' SIGHUP
 case $key in
-   alt-u)
+   \[)
       sleep 0.05
-      xdotool type --clearmodifiers "${stuff[user]}"
+      xdotool type --clearmodifiers "${stuff[login]}"
       ;;
-   alt-p)
+   \])
       sleep 0.05
       xdotool type --clearmodifiers -- "$password"
       ;;
-   alt-a|\\)
+   \\)
       sleep 0.05
       for word in ${stuff[autotype]}; do
          case $word in
